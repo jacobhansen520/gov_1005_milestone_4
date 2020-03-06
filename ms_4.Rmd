@@ -1,0 +1,105 @@
+---
+title: "Milestone 4"
+author: "Jacob Hansen"
+date: "3/6/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+# Reading in relevant libraries.
+
+library(readxl)
+library(readr)
+library(janitor)
+library(tidyverse)
+library(tidycensus)
+```
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+
+jan_2017 <- read.csv("2017-01-01.csv", skip = 4) %>% 
+  clean_names() %>% 
+  head(45) %>% 
+  select(- x, - x_1, - x_2, - precincts, - total) %>% 
+  select(county, date_period, republican, democratic, libertarian, green, other) %>% 
+  filter(date_period == "17-Jan") %>% 
+  pivot_longer(names_to = "party",
+               values_to = "registration_2017",
+               cols = c(republican:other))
+
+jan_2018 <- read.csv("2018-01-01.csv", skip = 4) %>% 
+  clean_names() %>% 
+  head(45) %>% 
+  select(- x, - x_1, - x_2) %>% 
+  select(county, date_period, republican, democratic, libertarian, green, other) %>% 
+  filter(date_period == "Jan-18") %>% 
+  pivot_longer(names_to = "party",
+               values_to = "registration_2018",
+               cols = c(republican:other))
+
+jan_2019 <- read_csv("2019-01-01.csv", skip = 5) %>% 
+  clean_names() %>% 
+  head(60) %>% 
+  select(- x3, - x5, - x6, - x8, - x9, - x13, - x15, - x17) %>% 
+  na.omit() %>% 
+  select(county, date_period, republican, democratic, libertarian, green, other) %>% 
+  filter(date_period == "Jan-19") %>% 
+  pivot_longer(names_to = "party",
+               values_to = "registration_2019",
+               cols = c(republican:other))
+
+jan_2020 <- read_csv("2020-01-21.csv", skip = 5) %>% 
+  clean_names() %>% 
+  head(60) %>% 
+  select(- x3, - x5, - x6, - x8, - x9, - x13, - x15, - x17, - x18, - x19) %>% 
+  na.omit() %>% 
+  select(county, date_period, republican, democratic, libertarian, green, other) %>% 
+  filter(date_period == "Jan-20") %>% 
+  pivot_longer(names_to = "party",
+               values_to = "registration_2020",
+               cols = c(republican:other))
+
+jan_2017_to_2018 <- jan_2017 %>% 
+  full_join(jan_2018, by = c("county", "party"), suffix = c("_2017", "_2018")) %>% 
+  select(- date_period_2017, - date_period_2018)
+
+jan_2017_to_2019 <- jan_2017_to_2018 %>% 
+  full_join(jan_2019, by = c("county", "party")) %>% 
+  select(- date_period)
+
+jan_2017_to_2020 <- jan_2017_to_2019 %>% 
+  full_join(jan_2020, by = c("county", "party")) %>% 
+  select(- date_period)
+```
+
+```{r, include=FALSE}
+racevars <- c(White = "B02001_002", 
+              Black = "B02001_003", 
+              Asian = "B02001_005",
+              Hispanic = "B03003_003",
+              Native_American = "B02001_004")
+pima <- get_acs(geography = "tract",
+                  variables = racevars, 
+                  year = 2018,
+                  state = "AZ",
+                  county = "Pima County",
+                  geometry = TRUE,
+                  summary_var = "B02001_001")
+```
+
+
+```{r, echo=FALSE}
+pima %>%
+  mutate(Percent = 100 * (estimate / summary_est)) %>%
+  ggplot(aes(fill = Percent, color = Percent)) +
+  facet_wrap(~ variable) +
+  geom_sf() +
+  scale_fill_viridis_c(direction = -1) +
+  scale_color_viridis_c(direction = -1) +
+  labs(title = "Racial geography of Pima County, Arizona",
+       caption = "Source: American Community Survey 2014-2018") +
+  theme_void()
+```
+
