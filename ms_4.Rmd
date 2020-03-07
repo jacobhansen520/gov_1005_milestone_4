@@ -15,6 +15,7 @@ library(readr)
 library(janitor)
 library(tidyverse)
 library(tidycensus)
+library(gt)
 ```
 
 ```{r, echo=FALSE, message=FALSE, warning=FALSE}
@@ -89,7 +90,7 @@ pima <- get_acs(geography = "tract",
                   summary_var = "B02001_001")
 ```
 
-```{r, echo=FALSE}
+```{r, include=FALSE}
 pima %>%
   mutate(Percent = 100 * (estimate / summary_est)) %>%
   ggplot(aes(fill = Percent, color = Percent)) +
@@ -108,13 +109,16 @@ Option 1 is to take the unofficial vote counts for the highest-turnout election 
 
 Option 2 is to figure out a way to read in the official results as a usable file type. I'm not sure how to do this, and I'm not sure if the necessary data cleaning will be worth the time (though it might be good practice!).
 
-I think Option 1 is the preferable course. Though this data is not available in a downloadable file format, it's easy enough to put down into an excel spreadsheet and read in that way. There are drawbacks here, notably the potential for mistakes. For this reason I will look into the possibility/feasibility of reading in the data directly from the source. At this point, however, I have produced and read in a self-made data set for the 2018 Senate election results.
+I think Option 1 is the preferable course. Though this data is not available in a downloadable file format, it's easy enough to put down into an excel spreadsheet and read in that way. There are drawbacks here, notably the potential for mistakes. For this reason I will look into the possibility/feasibility of reading in the data directly from the source. At this point, however, I have produced and read in a self-made data set for the 2018 Senate election results:
 
-```{r}
+```{r, echo=FALSE}
 
 senate_results_2018 <- read_excel("2018_senate_results.xlsx") %>% 
   clean_names()
 
-senate_results_2018
+senate_results_2018 %>% 
+  gt() %>% 
+    tab_header(title = "2018 AZ Senate Election Results")
 ```
 
+The next step will be figuring out how to best represent this data (and the corresponding date for previous elections) with the voter registration data and the ACS data. I'm thinking a comparison of percent changes disaggregated by county might be best.
